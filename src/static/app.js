@@ -1,8 +1,123 @@
 document.addEventListener("DOMContentLoaded", () => {
   const activitiesList = document.getElementById("activities-list");
   const activitySelect = document.getElementById("activity");
-  const signupForm = document.getElementById("signup-form");
+  const signupForm =  signupForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Debes iniciar sesión como profesor para registrar estudiantes");
+      return;
+    }
+
+    const email = document.getElementById("email").value;
+    const activityName = document.getElementById("activity").value;
+
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(
+          activityName
+        )}/signup?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          }
+        }
+      );ementById("signup-form");
   const messageDiv = document.getElementById("message");
+  
+  // Elementos de autenticación
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const loginModal = document.getElementById("login-modal");
+  const loginForm = document.getElementById("login-form");
+  const modalClose = document.getElementById("modal-close");
+  const userInfo = document.getElementById("user-info");
+  const teacherName = document.getElementById("teacher-name");
+
+  let currentUser = null;
+  
+  // Verificar si hay un token guardado
+  const token = localStorage.getItem("token");
+  if (token) {
+    fetchCurrentUser(token);
+  }
+  
+  // Event listeners de autenticación
+  loginBtn.addEventListener("click", () => loginModal.classList.remove("hidden"));
+  modalClose.addEventListener("click", () => loginModal.classList.add("hidden"));
+  logoutBtn.addEventListener("click", handleLogout);
+  
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    
+    try {
+      const response = await fetch("/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        localStorage.setItem("token", data.access_token);
+        await fetchCurrentUser(data.access_token);
+        loginModal.classList.add("hidden");
+        loginForm.reset();
+      } else {
+        alert(data.detail || "Error al iniciar sesión");
+      }
+    } catch (error) {
+      console.error("Error durante el login:", error);
+      alert("Error al iniciar sesión");
+    }
+  });
+
+  async function fetchCurrentUser(token) {
+    try {
+      const response = await fetch("/me", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        currentUser = await response.json();
+        updateUIForUser(currentUser);
+      } else {
+        handleLogout();
+      }
+    } catch (error) {
+      console.error("Error al obtener usuario:", error);
+      handleLogout();
+    }
+  }
+
+  function updateUIForUser(user) {
+    if (user) {
+      loginBtn.classList.add("hidden");
+      userInfo.classList.remove("hidden");
+      teacherName.textContent = user.name;
+      signupForm.classList.remove("hidden");
+    } else {
+      loginBtn.classList.remove("hidden");
+      userInfo.classList.add("hidden");
+      teacherName.textContent = "";
+      signupForm.classList.add("hidden");
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    currentUser = null;
+    updateUIForUser(null);
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {

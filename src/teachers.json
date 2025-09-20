@@ -1,0 +1,14 @@
+{
+    "teachers": [
+        {
+            "username": "smith@mergington.edu",
+            "password": "pbkdf2:sha256:600000$demopass1",
+            "name": "Mr. Smith"
+        },
+        {
+            "username": "jones@mergington.edu",
+            "password": "pbkdf2:sha256:600000$demopass2",
+            "name": "Mrs. Jones"
+        }
+    ]
+}
